@@ -1,56 +1,41 @@
-import React, { Component } from 'react';
-import { connect } from 'react-redux';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { loadImages } from '../../actions';
 
 import './styles.css';
 
-const key = '5f96323678d05ff0c4eb264ef184556868e303b32a2db88ecbf15746e6f25e02';
+import Button from '../Button';
+import Stats from '../Stats';
 
-class ImageGrid extends Component {
-    state = {
-        images: [],
-    };
+export default () => {
+  const dispatch = useDispatch();
 
-    componentDidMount() {
-        fetch(`https://api.unsplash.com/photos/?client_id=${key}&per_page=28`)
-            .then(res => res.json())
-            .then(images => {
-                this.setState({
-                    images,
-                });
-            });
-    }
+  const images = useSelector(state => state.images);
+  const error = useSelector(state => state.error);
+  const isLoading = useSelector(state => state.isLoading);
+  const imageStats = useSelector(state => state.imageStats);
 
-    render() {
-        const { images } = this.state;
-        return (
-            <div className="content">
-                <section className="grid">
-                    {images.map(image => (
-                        <div
-                            key={image.id}
-                            className={`item item-${Math.ceil(
-                                image.height / image.width,
-                            )}`}
-                        >
-                            <img
-                                src={image.urls.small}
-                                alt={image.user.username}
-                            />
-                        </div>
-                    ))}
-                </section>
-            </div>
-        );
-    }
-}
+  useEffect(() => {
+    dispatch(loadImages());
+  }, []);
 
-const mapStateToProps = ({ isLoading, images, error}) => ({
-    isLoading,
-    images,
-    error
-})
-
-export default connect(
-    mapStateToProps,
-    null
-)(ImageGrid);
+  return (
+    <div className="content">
+      <section className="grid">
+        {images.map(image => (
+          <div
+            key={image.id}
+            className={`item item-${Math.ceil(image.height / image.width)}`}
+          >
+            <Stats stats={imageStats[image.id]} />
+            <img src={image.urls.small} alt={image.user.username} />
+          </div>
+        ))}
+        {error && <div className="error">{error}</div>}
+      </section>
+      <Button onClick={() => !isLoading && dispatch(loadImages())} loading={isLoading}>
+        Load More
+      </Button>
+    </div>
+  );
+};
